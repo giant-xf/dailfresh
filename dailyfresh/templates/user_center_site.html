@@ -1,0 +1,109 @@
+{% extends 'base_user_center.html' %}
+{% load staticfiles%}
+{% block right_content %}
+    <div class="right_content clearfix">
+            <h3 class="common_title2">收货地址</h3>
+            <div class="site_con">
+                <dl>
+                    <dt>当前地址：</dt>
+                    {% if address %}
+                        {% for address in address %}
+                            {% if address.is_default %}
+                            <dd ><input type="radio" address_id="{{ address.id }}"  name="remember" {{ checked }} >{{ address.addr}} ({{ address.receiver }} 收) {{ address.phone }}<button class="fr" href="javaScript:;" >删除</button></dd>
+{#                href="/user/delete{{ address.id }}"#}
+                            {% endif %}
+                        {% endfor %}
+                        {% for address in address %}
+                            {% if address.is_default == False %}
+                            <dd><input type="radio" address_id="{{ address.id }}" name="remember" > {{ address.addr}} （{{ address.receiver }} 收） {{ address.phone }}<button class="fr" href="javaScript:;">删除</button></dd>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% for address in address %}
+{#                        <dd><input type="radio" name="remember" {% if address.is_default %}{{ checked }}{% endif %} >{{ address.addr}} （{{ address.receiver }} 收） {{ address.phone }}<a class="fr" href="/user/delete{{ address.id }}" >删除</a></dd>#}
+                        {% endfor %}
+                    {% else %}
+                        <dd>无默认收货地址</dd>
+                    {% endif %}
+                    <dt><input type="button" id="btn" value="修改默认地址"></dt>
+                </dl>
+            </div>
+            <h3 class="common_title2">编辑地址</h3>
+            <div class="site_con">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form_group">
+                        <label>*收件人：</label>
+                        <input type="text" name="receiver">
+                    </div>
+                    <div class="form_group form_group2">
+                        <label>*详细地址：</label>
+                        <textarea class="site_area" name="addr"></textarea>
+                    </div>
+                    <div class="form_group">
+                        <label>(选填)邮编：</label>
+                        <input type="text" name="zip_code">
+                    </div>
+                    <div class="form_group">
+                        <label>*手机：</label>
+                        <input type="text" name="phone">
+                    </div>
+
+                    <input type="submit" value="提交" class="info_submit">
+                </form>
+                {{ errmsg }}
+            </div>
+    </div>
+{% endblock right_content %}
+
+{% block buttomfiles %}
+<script type="text/javascript" src="{% static 'js/jquery-1.12.4.min.js' %}"></script>
+    <script type="text/javascript">
+        // 删除收货地址信息
+        $('.site_con').find('dd').find('button').click(function () {
+            // 获取address_id
+            address_id = $(this).parent('dd').find('input').attr('address_id')
+            // alert(address_id)
+            csrf =$('input[name="csrfmiddlewaretoken"]').val();
+            // 获取父元素dd
+            sku_dd = $(this).parents('dd')
+            context = {'address_id':address_id,'csrfmiddlewaretoken':csrf}
+            $.post('/user/delete', context, function (data) {
+                if (data.res == 4){
+                    // 删除成功
+                    sku_dd.remove()
+                    // alert(data.message)
+                }
+                else{
+                    // 删除失败
+                    alert(data.errmsg)
+                }
+            })
+        })
+
+        // 修改默认地址
+        $('#btn').click(function () {
+            // 获取默认地址的id
+            address_id = $('.site_con').find(':checked').attr('address_id')
+            // alert(address_id)
+            csrf =$('input[name="csrfmiddlewaretoken"]').val();
+            context = {'address_id':address_id,'csrfmiddlewaretoken':csrf}
+            address_id=parseInt(address_id)
+            // 发起ajax请求
+            $.post('/user/update',context,function (data) {
+                if(data.res==1){
+                    // alert(data.message)
+                    location.href = '/user/address'
+                }
+                else if(data.res == 2){
+                    location.href = '/user/login'
+                }
+                else {
+                    alert(data.errmsg)
+                }
+            })
+        })
+
+
+    </script>
+{% endblock buttomfiles %}
